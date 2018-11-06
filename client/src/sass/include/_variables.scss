@@ -1,3 +1,6 @@
+$small-view: 800px;
+$mobile-view: 500px;
+
 $main-fonts: 'Source Sans Pro', sans-serif;
 $font-regular: 400;
 $font-semibold: 600;
@@ -8,9 +11,13 @@ $grey-hoover-color: #CBFFE6;;
 $orange-color: #ff71ce;
 $orange-hoover-color: #FFCFEA;
 
-$black-background: #BFB9FF;
-$grey-background: #D9E1FB;
-$red-error: #FF71CE;
+$bg-color: #BFB9FF;
+$fg-color: #D9E1FB;
+
+$red: #FF71CE;
+$green: #39CC0B;
+
+$grey-actor-name: #777272;
 
 $expanded-horizontal-margins: 150px;
 $not-expanded-horizontal-margins: 30px;
@@ -21,10 +28,14 @@ $header-height: 50px;
 $header-border-color: #e9eff6;
 $search-input-width: 375px;
 
-$menu-color: #FEFFBE;
+$menu-background: #FEFFBE;
+$menu-color: #fff;
+
 $menu-bottom-color: #C6C6C6;
 $menu-width: 240px;
-$menu-left-padding: 26px;
+$menu-lateral-padding: 26px;
+
+$sub-menu-color: #F7F7F7;
 
 $footer-height: 30px;
 $footer-margin: 30px;
@@ -34,4 +45,27 @@ $footer-border-color: $header-border-color;
 $video-thumbnail-height: 110px;
 $video-thumbnail-width: 200px;
 
-$theater-bottom-space: 85px;
+$theater-bottom-space: 115px;
+
+$input-background-color: $bg-color;
+$input-placeholder-color: #898989;
+
+/*** map theme ***/
+
+// pass variables into a sass map,
+// to be warned of non-existing variables
+$variables: (
+  --mainColor: var(--mainColor),
+  --mainHoverColor: var(--mainHoverColor),
+  --mainBackgroundColor: var(--mainBackgroundColor),
+  --mainForegroundColor: var(--mainForegroundColor),
+  --submenuColor: var(--submenuColor),
+  --inputColor: var(--inputColor),
+  --inputPlaceholderColor: var(--inputPlaceholderColor)
+);
+
+/*** theme helper ***/
+
+@function var($variable) {
+  @return map-get($variables, $variable);
+}
