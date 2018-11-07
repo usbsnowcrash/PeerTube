@@ -125,9 +125,12 @@ export class VideoRedundancyModel extends Model<VideoRedundancyModel> {
     return instance.VideoFile.Video.removeFile(instance.VideoFile)
   }
 
-  static loadByFileId (videoFileId: number) {
+  static async loadLocalByFileId (videoFileId: number) {
+    const actor = await getServerActor()
+
     const query = {
       where: {
+        actorId: actor.id,
         videoFileId
       }
     }
@@ -144,6 +147,38 @@ export class VideoRedundancyModel extends Model<VideoRedundancyModel> {
     }
 
     return VideoRedundancyModel.findOne(query)
+  }
+
+  static async isLocalByVideoUUIDExists (uuid: string) {
+    const actor = await getServerActor()
+
+    const query = {
+      raw: true,
+      attributes: [ 'id' ],
+      where: {
+        actorId: actor.id
+      },
+      include: [
+        {
+          attributes: [ ],
+          model: VideoFileModel,
+          required: true,
+          include: [
+            {
+              attributes: [ ],
+              model: VideoModel,
+              required: true,
+              where: {
+                uuid
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+    return VideoRedundancyModel.findOne(query)
+      .then(r => !!r)
   }
 
   static async getVideoSample (p: Bluebird<VideoModel[]>) {
@@ -284,6 +319,47 @@ export class VideoRedundancyModel extends Model<VideoRedundancyModel> {
     }
 
     return VideoRedundancyModel.scope([ ScopeNames.WITH_VIDEO ]).findAll(query)
+  }
+
+  static async listLocalOfServer (serverId: number) {
+    const actor = await getServerActor()
+
+    const query = {
+      where: {
+        actorId: actor.id
+      },
+      include: [
+        {
+          model: VideoFileModel,
+          required: true,
+          include: [
+            {
+              model: VideoModel,
+              required: true,
+              include: [
+                {
+                  attributes: [],
+                  model: VideoChannelModel.unscoped(),
+                  required: true,
+                  include: [
+                    {
+                      attributes: [],
+                      model: ActorModel.unscoped(),
+                      required: true,
+                      where: {
+                        serverId
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+
+    return VideoRedundancyModel.findAll(query)
   }
 
   static async getStats (strategy: VideoRedundancyStrategy) {

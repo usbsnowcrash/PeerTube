@@ -4,7 +4,7 @@ import { logger } from './logger'
 import { generateVideoTmpPath } from './utils'
 import { join } from 'path'
 import { root } from './core-utils'
-import { ensureDir, writeFile } from 'fs-extra'
+import { ensureDir, writeFile, remove } from 'fs-extra'
 import * as request from 'request'
 import { createWriteStream } from 'fs'
 
@@ -16,6 +16,10 @@ export type YoutubeDLInfo = {
   nsfw?: boolean
   tags?: string[]
   thumbnailUrl?: string
+}
+
+const processOptions = {
+  maxBuffer: 1024 * 1024 * 10 // 10MB
 }
 
 function getYoutubeDLInfo (url: string, opts?: string[]): Promise<YoutubeDLInfo> {
@@ -35,8 +39,9 @@ function getYoutubeDLInfo (url: string, opts?: string[]): Promise<YoutubeDLInfo>
   })
 }
 
-function downloadYoutubeDLVideo (url: string) {
+function downloadYoutubeDLVideo (url: string, timeout: number) {
   const path = generateVideoTmpPath(url)
+  let timer
 
   logger.info('Importing youtubeDL video %s', url)
 
@@ -44,11 +49,24 @@ function downloadYoutubeDLVideo (url: string) {
 
   return new Promise<string>(async (res, rej) => {
     const youtubeDL = await safeGetYoutubeDL()
-    youtubeDL.exec(url, options, err => {
-      if (err) return rej(err)
+    youtubeDL.exec(url, options, processOptions, err => {
+      clearTimeout(timer)
+
+      if (err) {
+        remove(path)
+          .catch(err => logger.error('Cannot delete path on YoutubeDL error.', { err }))
+
+        return rej(err)
+      }
 
       return res(path)
     })
+
+    timer = setTimeout(async () => {
+      await remove(path)
+
+      return rej(new Error('YoutubeDL download timeout.'))
+    }, timeout)
   })
 }
 

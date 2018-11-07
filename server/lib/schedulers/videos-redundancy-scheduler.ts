@@ -1,5 +1,5 @@
 import { AbstractScheduler } from './abstract-scheduler'
-import { CONFIG, JOB_TTL, REDUNDANCY } from '../../initializers'
+import { CONFIG, REDUNDANCY, VIDEO_IMPORT_TIMEOUT } from '../../initializers'
 import { logger } from '../../helpers/logger'
 import { VideosRedundancy } from '../../../shared/models/redundancy'
 import { VideoRedundancyModel } from '../../models/redundancy/video-redundancy'
@@ -9,9 +9,9 @@ import { join } from 'path'
 import { rename } from 'fs-extra'
 import { getServerActor } from '../../helpers/utils'
 import { sendCreateCacheFile, sendUpdateCacheFile } from '../activitypub/send'
-import { VideoModel } from '../../models/video/video'
 import { getVideoCacheFileActivityPubUrl } from '../activitypub/url'
 import { removeVideoRedundancy } from '../redundancy'
+import { getOrCreateVideoAndAccountAndChannel } from '../activitypub'
 
 export class VideosRedundancyScheduler extends AbstractScheduler {
 
@@ -109,23 +109,39 @@ export class VideosRedundancyScheduler extends AbstractScheduler {
     const serverActor = await getServerActor()
 
     for (const file of filesToDuplicate) {
-      const existing = await VideoRedundancyModel.loadByFileId(file.id)
+      // We need more attributes and check if the video still exists
+      const getVideoOptions = {
+        videoObject: file.Video.url,
+        syncParam: { likes: false, dislikes: false, shares: false, comments: false, thumbnail: false, refreshVideo: true },
+        fetchType: 'only-video' as 'only-video'
+      }
+      const { video } = await getOrCreateVideoAndAccountAndChannel(getVideoOptions)
+
+      const existing = await VideoRedundancyModel.loadLocalByFileId(file.id)
       if (existing) {
-        await this.extendsExpirationOf(existing, redundancy.minLifetime)
+        if (video) {
+          await this.extendsExpirationOf(existing, redundancy.minLifetime)
+        } else {
+          logger.info('Destroying existing redundancy %s, because the associated video does not exist anymore.', existing.url)
+
+          await existing.destroy()
+        }
 
         continue
       }
 
-      // We need more attributes and check if the video still exists
-      const video = await VideoModel.loadAndPopulateAccountAndServerAndTags(file.Video.id)
-      if (!video) continue
+      if (!video) {
+        logger.info('Video %s we want to duplicate does not existing anymore, skipping.', file.Video.url)
+
+        continue
+      }
 
       logger.info('Duplicating %s - %d in videos redundancy with "%s" strategy.', video.url, file.resolution, redundancy.strategy)
 
       const { baseUrlHttp, baseUrlWs } = video.getBaseUrls()
       const magnetUri = video.generateMagnetUri(file, baseUrlHttp, baseUrlWs)
 
-      const tmpPath = await downloadWebTorrentVideo({ magnetUri }, JOB_TTL['video-import'])
+      const tmpPath = await downloadWebTorrentVideo({ magnetUri }, VIDEO_IMPORT_TIMEOUT)
 
       const destPath = join(CONFIG.STORAGE.VIDEOS_DIR, video.getVideoFilename(file))
       await rename(tmpPath, destPath)
