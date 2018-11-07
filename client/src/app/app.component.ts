@@ -133,10 +133,6 @@ export class AppComponent implements OnInit {
         this.toggleMenu()
         return false
       }, undefined, 'Toggle the left menu'),
-      new Hotkey('g s', (event: KeyboardEvent): boolean => {
-        this.router.navigate([ '/videos/subscriptions' ])
-        return false
-      }, undefined, 'Go to the subscriptions videos page'),
       new Hotkey('g o', (event: KeyboardEvent): boolean => {
         this.router.navigate([ '/videos/overview' ])
         return false
@@ -157,7 +153,7 @@ export class AppComponent implements OnInit {
         this.router.navigate([ '/videos/upload' ])
         return false
       }, undefined, 'Go to the videos upload page'),
-      new Hotkey('T', (event: KeyboardEvent): boolean => {
+      new Hotkey('shift+t', (event: KeyboardEvent): boolean => {
         this.themeService.toggleDarkTheme()
         return false
       }, undefined, 'Toggle Dark theme')

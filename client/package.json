@@ -1,6 +1,6 @@
 {
   "name": "peertube-client",
-  "version": "1.0.0-beta.12",
+  "version": "1.0.0-beta.13",
   "private": true,
   "licence": "GPLv3",
   "author": {
@@ -159,6 +159,7 @@
     "webpack-cli": "^3.0.8",
     "webtorrent": "^0.102.1",
     "whatwg-fetch": "^2.0.4",
-    "zone.js": "~0.8.5"
+    "zone.js": "~0.8.5",
+    "focus-visible": "^4.1.5"
   }
 }
