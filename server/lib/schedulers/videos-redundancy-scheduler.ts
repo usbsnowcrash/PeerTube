@@ -113,7 +113,7 @@ export class VideosRedundancyScheduler extends AbstractScheduler {
       const getVideoOptions = {
         videoObject: file.Video.url,
         syncParam: { likes: false, dislikes: false, shares: false, comments: false, thumbnail: false, refreshVideo: true },
-        fetchType: 'only-video' as 'only-video'
+        fetchType: 'all' as 'all'
       }
       const { video } = await getOrCreateVideoAndAccountAndChannel(getVideoOptions)
 
@@ -157,6 +157,8 @@ export class VideosRedundancyScheduler extends AbstractScheduler {
       createdModel.VideoFile = file
 
       await sendCreateCacheFile(serverActor, createdModel)
+
+      logger.info('Duplicated %s - %d -> %s.', video.url, file.resolution, createdModel.url)
     }
   }
 
